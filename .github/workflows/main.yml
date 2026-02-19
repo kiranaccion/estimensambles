@@ -46,65 +46,9 @@ jobs:
           docker system prune -af || true
           echo "After cleanup"
           df -h
-      - name: Login to Azure ACR
+      - name: test dev backend
         run: |
-          echo "${{ secrets.AZURE_ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} \
-            -u ${{ secrets.AZURE_ACR_USERNAME }} --password-stdin
-
-      - name: Build Backend Image
-        run: |
-          docker build \
-            -f Backend/Dockerfile \
-            --build-arg APP_ENV=${{ env.APP_ENV }} \
-            -t ${{ secrets.ACR_LOGIN_SERVER }}/backend-app:${{ github.sha }} \
-            Backend/
-
-      - name: Push Backend Image
-        run: |
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/backend-app:${{ github.sha }}
-
-          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/backend-app:${{ github.sha }} \
-            ${{ secrets.ACR_LOGIN_SERVER }}/backend-app:latest
-
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/backend-app:latest
-
-      - name: Deploy to Backend VM
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.BACKEND_VM_HOST }}
-          username: ${{ secrets.BACKEND_VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "Login to ACR"
-            echo "${{ secrets.AZURE_ACR_PASSWORD }}" | sudo docker login ${{ secrets.ACR_LOGIN_SERVER }} \
-              -u ${{ secrets.AZURE_ACR_USERNAME }} --password-stdin
-
-            sudo docker stop backend-container || true
-            sudo docker rm backend-container || true
-
-            sudo docker pull ${{ secrets.ACR_LOGIN_SERVER }}/backend-app:${{ github.sha }}
-
-            sudo docker run -d \
-              --name backend-container \
-              --restart unless-stopped \
-              --network host \
-              -v /root/backendlogs:/app/logs \
-              -p 8002:8002 \
-              -e APP_ENV=DEV \
-              -e AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" \
-              -e BACKEND_AZURE_CLIENT_ID="${{ secrets.BACKEND_AZURE_CLIENT_ID }}" \
-              -e BACKEND_AZURE_CLIENT_SECRET="${{ secrets.BACKEND_AZURE_CLIENT_SECRET }}" \
-              -e KEY_VAULT_URL="${{ secrets.KEY_VAULT_URL }}" \
-              -e DD_AGENT_HOST=localhost \
-              -e DD_SERVICE=bldr-d2-backend \
-              -e DD_ENV=dev \
-              -e DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED=true \
-              -e DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED=true \
-              -e DD_LOGS_INJECTION=true \
-              -e DD_VERSION=1.0.0 \
-              ${{ secrets.ACR_LOGIN_SERVER }}/backend-app:${{ github.sha }}
-
-            echo "Backend deployed successfully"
+          echo "Tetsing BAckend DEV"
         # run only if some file not 'PDF-Processing' folder was changed
       #- name: Trigger Build-Portal PDF-Processing
         if: steps.changes.outputs.PDF-Processing == 'true'
@@ -116,110 +60,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Azure ACR
+      - name: test dev PDF Processing
         run: |
-          echo "${{ secrets.DEV_AZURE_ACR_PASSWORD }}" | docker login ${{ secrets.DEV_ACR_LOGIN_SERVER }} \
-            -u ${{ secrets.DEV_AZURE_ACR_USERNAME }} --password-stdin
-
-      - name: Build PDF Processing Image
-        run: |
-          docker build \
-            -f PDF-Processing/Dockerfile \
-            -t ${{ secrets.DEV_ACR_LOGIN_SERVER }}/pdf-processing-app:${{ github.sha }} \
-            -t ${{ secrets.DEV_ACR_LOGIN_SERVER }}/pdf-processing-app:latest-dev \
-            PDF-Processing/
-
-      - name: Push PDF Processing Image
-        run: |
-          docker push ${{ secrets.DEV_ACR_LOGIN_SERVER }}/pdf-processing-app:${{ github.sha }}
-          docker push ${{ secrets.DEV_ACR_LOGIN_SERVER }}/pdf-processing-app:latest-dev
-
-      - name: Deploy to VM
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEV_PDF_VM_HOST }}
-          username: ${{ secrets.DEV_PDF_VM_USER }}
-          key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
-          script: |
-            # Login to ACR
-            echo "${{ secrets.DEV_AZURE_ACR_PASSWORD }}" | sudo docker login ${{ secrets.DEV_ACR_LOGIN_SERVER }} \
-              -u ${{ secrets.DEV_AZURE_ACR_USERNAME }} --password-stdin
-            IMAGE_NAME="${{ secrets.DEV_ACR_LOGIN_SERVER }}/pdf-processing-app:${{ github.sha }}"
-            # Pull the image
-            sudo docker pull "$IMAGE_NAME"
-            # Stop and remove old container if exists
-            sudo docker stop pdf-processing-container 2>/dev/null || true
-            sudo docker rm pdf-processing-container 2>/dev/null || true
-            # Run new container with ALL required environment variables
-            sudo docker run -d \
-              --name pdf-processing-container \
-              --restart unless-stopped \
-              -e APP_ENV=DEV \
-              -e PORT=8003 \
-              --network host \
-              -v /root/pdfprocessinglogs:/app/logs \
-              -e APP_WEB_HOST=0.0.0.0 \
-              -e USE_MANAGED_IDENTITY="true" \
-              -e KEY_VAULT_URL="${{ secrets.KEY_VAULT_URL }}" \
-              -e AZURE_STORAGE_ACCOUNT_NAME="${{ secrets.DEV_STORAGE_ACCOUNT_NAME }}" \
-              -e DD_ENV=dev \
-              -e DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED=true \
-              -e DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED=true \
-              -e DD_LOGS_INJECTION=true \
-              -e DD_VERSION=1.0.0 \
-              "$IMAGE_NAME"
-            sleep 5
-            # Check container status
-            if sudo docker ps --filter "name=pdf-processing-container" | grep -q pdf-processing-container; then
-              echo "✅ PDF Processing deployed successfully!"
-              echo "📊 Container status:"
-              sudo docker ps --filter "name=pdf-processing-container"
-              echo ""
-              echo "📝 Container logs (last 10 lines):"
-              sudo docker logs pdf-processing-container --tail 10
-            else
-              echo "❌ Container failed to start!"
-              echo "Checking exited containers:"
-              sudo docker ps -a --filter "name=pdf-processing-container"
-              exit 1
-            fi
-            # Clean up old images (optional)
-            sudo docker image prune -f
+          echo "Tetsing  Processing DEV"
         # run only if some file not 'Orchestrator' folder was changed
       #- name: Trigger Dev Orchestrator
         if: steps.changes.outputs.Orchestrator == 'true'
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Zip files
-        shell: pwsh
+      - name: Test Orchestrator Dev
         run: |
-            #Zip folder
-            Compress-Archive -Path "$env:GITHUB_WORKSPACE/Orchestrator/*" -DestinationPath "$env:GITHUB_WORKSPACE/Orchestrator.zip"
-    
-      - name: 'Run the Azure Functions action'
-        uses: Azure/functions-action@v1
-        id: deploy-to-function-app
-        with:
-          app-name: ${{ env.DEV_AZURE_FUNCTIONAPP_NAME }}
-          package: "${{ github.workspace }}/Orchestrator.zip"
-          sku: 'flexconsumption'    # Parameter required when using a publish profile with Flex Consumption
-          publish-profile: ${{ secrets.DEV_AZURE_PUBLISH_PROFILE }}
-
-      # - name: Azure Login action
-      #   uses: azure/login@v2
-      #   with:
-      #     creds: ${{ secrets.DEV_AZURE_CREDENTIALS_BACKEND }}
-      #     enable-AzPSSession: true
-
-      # - name: functionapp deployment
-      #   uses: azure/powershell@v2
-      #   with:
-      #     azPSVersion: latest
-      #     inlineScript: |
-            
-      #       #Zip folder
-      #       Compress-Archive -Path "$env:GITHUB_WORKSPACE/Orchestrator" -DestinationPath "$env:GITHUB_WORKSPACE/Orchestrator.zip"
-          
-      #       #Deploy functionapp
-      #       az functionapp deployment source config-zip -g bldr-dev-rg -n bldr-dev-digitizer-functionapp --src "$env:GITHUB_WORKSPACE/Orchestrator.zip"
+         echo "Testing Orchestrator Dev"
