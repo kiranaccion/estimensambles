@@ -203,7 +203,7 @@ jobs:
         with:
           app-name: ${{ env.DEV_AZURE_FUNCTIONAPP_NAME }}
           package: "${{ github.workspace }}/Orchestrator.zip"
-          sku: `flexconsumption`    # Parameter required when using a publish profile with Flex Consumption
+          sku: 'flexconsumption'    # Parameter required when using a publish profile with Flex Consumption
           publish-profile: ${{ secrets.DEV_AZURE_PUBLISH_PROFILE }}
 
       # - name: Azure Login action
