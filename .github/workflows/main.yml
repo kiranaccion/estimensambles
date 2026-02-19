@@ -17,7 +17,9 @@ jobs:
       Orchestrator: ${{ steps.filter.outputs.Orchestrator }}
       
     steps:
-      - uses: dorny/paths-filter@v2
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
            filters: |
