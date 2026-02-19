@@ -3,7 +3,7 @@ name: Dev - Backend + PDF + Orchestrator
 on:
   workflow_dispatch:
   push:
-    branches: [ dev ]
+    branches: [ main ]
     paths: 
       - 'Backend/**'
       - 'PDF-Processing/**'
