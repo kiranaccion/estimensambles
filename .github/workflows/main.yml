@@ -31,21 +31,7 @@ jobs:
         if: ${{ steps.changes.outputs.Backend == 'true' }}
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Free disk space
-        run: |
-          echo "Before cleanup"
-          df -h
-          # Remove large unused packages
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/lib/jvm
-          # Clean Docker
-          docker system prune -af || true
-          echo "After cleanup"
-          df -h
+        
       - name: test dev backend
         run: |
           echo "Tetsing BAckend DEV"
@@ -54,12 +40,7 @@ jobs:
         if: steps.changes.outputs.PDF-Processing == 'true'
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          ref: dev
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
+        
       - name: test dev PDF Processing
         run: |
           echo "Tetsing  Processing DEV"
