@@ -1,0 +1,73 @@
+name: Dev - Backend + PDF + Orchestrator
+ 
+on:
+  #workflow_dispatch:
+  push:
+    branches: [ temp1 ]
+    paths: 
+      - 'Backend/**'
+      - 'PDF-Processing/**'
+      - 'Orchestrator/**'
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      Backend: ${{ steps.filter.outputs.Backend }}
+      PDF-Processing: ${{ steps.filter.outputs.PDF-Processing }}
+      Orchestrator: ${{ steps.filter.outputs.Orchestrator }}
+      
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+           filters: |
+              Backend:
+                - 'Backend/**'
+              PDF-Processing:
+                - 'PDF-Processing/**'
+              Orchestrator:
+                - 'Orchestrator/**'
+      
+  Backend:
+   needs: detect
+   if: needs.detect.outputs.Backend == 'true'
+   runs-on: ubuntu-latest
+   env:
+     APP_ENV: DEV
+   steps:
+     - name: Checkout repo
+       uses: actions/checkout@v4
+        
+     - name: test dev backend
+       run: |
+          echo "Tetsing BAckend DEV"
+
+  PDF-Processing:
+   needs: detect
+   if: needs.detect.outputs.PDF-Processing == 'true'
+   runs-on: ubuntu-latest
+   env:
+     APP_ENV: DEV
+   steps:
+     - name: Checkout repo
+       uses: actions/checkout@v4
+        
+     - name: test dev PDF
+       run: |
+          echo "Tetsing PDF DEV"
+
+  Orchestrator:
+   needs: detect
+   if: needs.detect.outputs.Orchestrator == 'true'
+   runs-on: ubuntu-latest
+   env:
+     APP_ENV: DEV
+   steps:
+     - name: Checkout repo
+       uses: actions/checkout@v4
+        
+     - name: test dev Orchestrator
+       run: |
+          echo "Tetsing Orchestrator DEV"
