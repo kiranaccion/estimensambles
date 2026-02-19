@@ -26,7 +26,7 @@ jobs:
                 - 'PDF-Processing/**'
               Orchestrator:
                 - 'Orchestrator/**'
-      - name: Trigger Dev backend
+      #- name: Trigger Dev backend
         # run only if some file in 'backend' folder was changed
         if: steps.changes.outputs.Backend == 'true'
       - name: Checkout repo
@@ -106,7 +106,7 @@ jobs:
 
             echo "Backend deployed successfully"
         # run only if some file not 'PDF-Processing' folder was changed
-      - name: Trigger Build-Portal PDF-Processing
+      #- name: Trigger Build-Portal PDF-Processing
         if: steps.changes.outputs.PDF-Processing == 'true'
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -186,7 +186,7 @@ jobs:
             # Clean up old images (optional)
             sudo docker image prune -f
         # run only if some file not 'Orchestrator' folder was changed
-      - name: Trigger Dev Orchestrator
+      #- name: Trigger Dev Orchestrator
         if: steps.changes.outputs.Orchestrator == 'true'
       - name: Checkout code
         uses: actions/checkout@v4
